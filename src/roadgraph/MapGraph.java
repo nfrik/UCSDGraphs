@@ -396,10 +396,70 @@ public class MapGraph{
 											 GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 3
-		
+		PriorityQueue<GeographicPoint> queue = new PriorityQueue<GeographicPoint>(new Comparator<GeographicPoint>() {
+			@Override
+			public int compare(GeographicPoint V1, GeographicPoint V2) {
+				return (V1.getDistanceToStart()==V2.getDistanceToStart() ? 0 : (V1.getDistanceToStart()<V2.getDistanceToStart()) ? -1 : 1);
+			}
+		});
+
+		Set<GeographicPoint> visited = new HashSet<GeographicPoint>();
+
+		Map<GeographicPoint, GeographicPoint> parentMap = new HashMap<GeographicPoint, GeographicPoint>();
+
+		GeographicPoint currVtx; // We use vertex in order to keep two values in one object (GeographicPoint and Priority)
+
+//		Vertex tempNeighbor;
+
+		queue.add(new GeographicPoint(start,0));
+
+		while (!queue.isEmpty()){
+			currVtx = queue.remove();
+
+			nodeSearched.accept(currVtx);
+
+			if(!visited.contains(currVtx)){
+				visited.add(currVtx);
+
+
+
+				if(currVtx.equals(goal)){
+					return getParentList(start,currVtx);
+				}
+
+				for(GeographicPoint neighbor : outNeighbors(currVtx)){
+
+					//if neighbor is in visited list, check if distance to start is shorter
+					//else create one with infinite distance to start
+
+					double dist = currVtx.getDistanceToStart()+currVtx.distance(neighbor);
+
+					if(dist < neighbor.getDistanceToStart()) {
+
+						neighbor.setDistanceToStart(currVtx.getDistanceToStart() + dist + neighbor.distance(goal));
+
+						neighbor.setParent(currVtx);
+
+//						updateVertex(neighbor);
+						//new Vertex(neighbor,currVtx.getGeographicPoint().distance(neighbor.getGeographicPoint()));
+
+//						parentList.add(neighbor);
+
+//						parentMap.put(neighbor, currVtx);
+
+						queue.add(neighbor);
+					}
+
+				}
+
+			}
+		}
+
+
+
 		// Hook for visualization.  See writeup.
-		//nodeSearched.accept(next.getLocation());
-		
+		// nodeSearched.accept(next.getLocation());
+
 		return null;
 	}
 
