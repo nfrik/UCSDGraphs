@@ -4,10 +4,24 @@ import java.awt.geom.Point2D.Double;
 
 @SuppressWarnings("serial")
 public class GeographicPoint extends Double {
+
+	private double distanceToStart = java.lang.Double.MAX_VALUE;//initial distance to start is infinity even for current vertex
+
+	private int id;
+
+	private GeographicPoint parent = null;
 	
 	public GeographicPoint(double latitude, double longitude)
 	{
 		super(latitude, longitude);
+		id+=1;
+	}
+
+	public GeographicPoint(GeographicPoint gp, double ds)
+	{
+		super(gp.getX(), gp.getY());
+		setDistanceToStart(ds);
+		id+=1;
 	}
 	
 	/**
@@ -39,11 +53,34 @@ public class GeographicPoint extends Double {
     	double d = R * c;
     	return d;
     }
+
+	public double getDistanceToStart() {
+		return distanceToStart;
+	}
+
+	public void setDistanceToStart(double distanceToStart) {
+		this.distanceToStart = distanceToStart;
+	}
+
+	public GeographicPoint getParent() {
+		return parent;
+	}
+
+	public void setParent(GeographicPoint parent) {
+		this.parent = parent;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
     
     public String toString()
     {
     	return "Lat: " + getX() + ", Lon: " + getY();
     }
-	
-	
+
 }

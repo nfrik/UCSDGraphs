@@ -8,10 +8,12 @@
 package roadgraph;
 
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 
 import geography.GeographicPoint;
+import gmapsfx.javascript.object.GoogleMap;
 import util.GraphLoader;
 
 /**
@@ -96,6 +98,15 @@ public class MapGraph{
 			return true;
 		}
 		// TODO: Implement this method in WEEK 2
+		return false;
+	}
+
+	public boolean updateVertex(GeographicPoint location){
+		if(adjMapList.containsKey(location)){
+			ArrayList<Edge> tempList = adjMapList.get(location);
+			adjMapList.put(location,tempList);
+			return true;
+		}
 		return false;
 	}
 	
@@ -186,7 +197,7 @@ public class MapGraph{
 	 * @return The list of intersections that form the shortest (unweighted)
 	 *   path from start to goal (including both start and goal).
 	 */
-	public List<GeographicPoint> bfs(GeographicPoint start, 
+	public List<GeographicPoint> bfs(GeographicPoint start,
 			 					     GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 2
@@ -195,7 +206,6 @@ public class MapGraph{
 		Set visited = new HashSet<GeographicPoint>();
 		GeographicPoint curr;
 
-//		List<GeographicPoint> parentMap = new ArrayList<>();
 		Map<GeographicPoint, GeographicPoint> parentMap = new HashMap<GeographicPoint, GeographicPoint>();
 
 		queue.add(start);
@@ -224,7 +234,7 @@ public class MapGraph{
 
 		}
 
-		
+
 		// Hook for visualization.  See writeup.
 		//nodeSearched.accept(next.getLocation());
 
@@ -243,6 +253,30 @@ public class MapGraph{
 		return parentList;
 	}
 
+	private List<GeographicPoint> getParentList(Vertex start, Vertex goal, Map<Vertex, Vertex> parentMap) {
+		List<GeographicPoint> parentList = new ArrayList<GeographicPoint>();
+		Vertex currentNode = goal;
+		while(!currentNode.getGeographicPoint().equals(start.getGeographicPoint())){
+			parentList.add(currentNode.getGeographicPoint());
+			currentNode=parentMap.get(currentNode);
+		}
+		parentList.add(start.getGeographicPoint());
+		Collections.reverse(parentList);
+		return parentList;
+	}
+
+	private List<GeographicPoint> getParentList(GeographicPoint start, GeographicPoint goal) {
+		List<GeographicPoint> parentList = new ArrayList<GeographicPoint>();
+		GeographicPoint currentNode = goal;
+
+		while(!currentNode.equals(start) && currentNode.getParent()!=null){
+			parentList.add(currentNode);
+			currentNode=currentNode.getParent();
+		}
+		parentList.add(start);
+		Collections.reverse(parentList);
+		return parentList;
+	}
 
 	/** Find the path from start to goal using Dijkstra's algorithm
 	 * 
@@ -270,27 +304,60 @@ public class MapGraph{
 										  GeographicPoint goal, Consumer<GeographicPoint> nodeSearched)
 	{
 		// TODO: Implement this method in WEEK 3
-		PriorityQueue<Vertex> queue = new PriorityQueue<Vertex>(new Comparator<Vertex>() {
+		PriorityQueue<GeographicPoint> queue = new PriorityQueue<GeographicPoint>(new Comparator<GeographicPoint>() {
 			@Override
-			public int compare(Vertex V1, Vertex V2) {
+			public int compare(GeographicPoint V1, GeographicPoint V2) {
 				return (V1.getDistanceToStart()==V2.getDistanceToStart() ? 0 : (V1.getDistanceToStart()<V2.getDistanceToStart()) ? -1 : 1);
 			}
 		});
 
-		Set<Vertex> visited = new HashSet<Vertex>();
+		Set<GeographicPoint> visited = new HashSet<GeographicPoint>();
 
-		Vertex curr; // We use vertex in order to keep two values in one object (GeographicPoint and Priority)
+		Map<GeographicPoint, GeographicPoint> parentMap = new HashMap<GeographicPoint, GeographicPoint>();
 
-		queue.add(new Vertex(start,0));
+		GeographicPoint currVtx; // We use vertex in order to keep two values in one object (GeographicPoint and Priority)
+
+//		Vertex tempNeighbor;
+
+		queue.add(new GeographicPoint(start,0));
 
 		while (!queue.isEmpty()){
-			curr = (Vertex) queue.remove();
+			currVtx = queue.remove();
 
-			if(!visited.contains(curr)){
-				visited.add(curr);
+			nodeSearched.accept(currVtx);
 
-				for(GeographicPoint neighbor : outNeighbors(curr.getGeographicPoint())){
-					
+			if(!visited.contains(currVtx)){
+				visited.add(currVtx);
+
+
+
+				if(currVtx.equals(goal)){
+					return getParentList(start,currVtx);
+				}
+
+				for(GeographicPoint neighbor : outNeighbors(currVtx)){
+
+					//if neighbor is in visited list, check if distance to start is shorter
+					//else create one with infinite distance to start
+
+					double dist = currVtx.getDistanceToStart()+currVtx.distance(neighbor);
+
+					if(dist < neighbor.getDistanceToStart()) {
+
+						neighbor.setDistanceToStart(currVtx.getDistanceToStart() + dist);
+
+						neighbor.setParent(currVtx);
+
+//						updateVertex(neighbor);
+						//new Vertex(neighbor,currVtx.getGeographicPoint().distance(neighbor.getGeographicPoint()));
+
+//						parentList.add(neighbor);
+
+//						parentMap.put(neighbor, currVtx);
+
+						queue.add(neighbor);
+					}
+
 				}
 
 			}
@@ -357,10 +424,35 @@ public class MapGraph{
 	
 	public static void main(String[] args)
 	{
+
+		System.out.println();
+
 		System.out.print("Making a new map...");
 		MapGraph firstMap = new MapGraph();
 		System.out.print("DONE. \nLoading the map...");
 		GraphLoader.loadRoadMap("data/testdata/simpletest.map", firstMap);
+
+		Set<GeographicPoint> vertSet = firstMap.getVertices();
+		List<GeographicPoint> vertList = new ArrayList<GeographicPoint>(vertSet);
+
+//		GeographicPoint start = vertList.get(0);
+//
+//		GeographicPoint goal = vertList.get(vertList.size()-1);
+
+		GeographicPoint start = new GeographicPoint(7,3);
+
+		GeographicPoint goal = new GeographicPoint(4,-1);
+
+		List<GeographicPoint> parentList = firstMap.dijkstra(start,goal);
+
+		System.out.println(parentList);
+
+//		System.out.println(firstMap.inNeighbors(start));
+//
+//		System.out.println(firstMap.outNeighbors(start));
+
+
+
 //		System.out.print(firstMap.adjacencyString());
 //		System.out.println();
 //		System.out.print(firstMap.bfs(new GeographicPoint(1.0,1.0),new GeographicPoint(4.0,2.0)));
@@ -377,9 +469,10 @@ public class MapGraph{
 
 		MapGraph simpleTestMap = new MapGraph();
 		GraphLoader.loadRoadMap("data/testdata/simpletest.map", simpleTestMap);
+//		GraphLoader.loadRoadMap("data/testdata/map1.txt", simpleTestMap);
 		
-		GeographicPoint testStart = new GeographicPoint(1.0, 1.0);
-		GeographicPoint testEnd = new GeographicPoint(8.0, -1.0);
+		GeographicPoint testStart = new GeographicPoint(7.0, 3.0);
+		GeographicPoint testEnd = new GeographicPoint(4.0, -1.0);
 		
 		System.out.println("Test 1 using simpletest: Dijkstra should be 9 and AStar should be 5");
 		List<GeographicPoint> testroute = simpleTestMap.dijkstra(testStart,testEnd);

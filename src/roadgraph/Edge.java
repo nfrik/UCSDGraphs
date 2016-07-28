@@ -11,6 +11,9 @@ public class Edge {
 
     private double streetLength;
 
+    private GeographicPoint endVertex;
+
+
     public GeographicPoint getEndVertex() {
         return endVertex;
     }
@@ -19,8 +22,6 @@ public class Edge {
         this.endVertex = endVertex;
     }
 
-    private GeographicPoint endVertex;
-
     public String getRoadType() {
         return roadType;
     }
@@ -28,8 +29,6 @@ public class Edge {
     public void setRoadType(String streetName) {
         this.roadType = streetName;
     }
-
-
 
     public double getStreetLength() {
         return streetLength;
